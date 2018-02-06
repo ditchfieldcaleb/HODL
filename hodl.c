@@ -5,6 +5,7 @@ import "github.com/oraclize/ethereum-api/oraclizeAPI.sol";
 contract EthCD_OneHour is usingOraclize {
 
 	uint public constant MINIMUM_DEPOSIT = 0.01 ether;
+	uint public constant NUM_PAYOUTS = 30;
 
   // Each banker account info is stored using the account struct
   struct Account {
@@ -41,6 +42,8 @@ contract EthCD_OneHour is usingOraclize {
 
   function EthBank() public {
     total_payout_remaining = 0;
+
+		// Start the callbacks 60 seconds later
     oraclize_query(60, "URL", "");
   }
 
@@ -94,7 +97,7 @@ contract EthCD_OneHour is usingOraclize {
   function __callback(bytes32 myid, string result) {
   	if (msg.sender != oraclize_cbAddress()) throw;
 
-    // Recursive oraclize querying - will query every 24 hours
+    // Recursive oraclize querying - will query every 2 minutes
     oraclize_query(120, "URL", "");
     payout();
  	}
