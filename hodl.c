@@ -2,16 +2,16 @@ solidity ^0.4.11;
 
 import "github.com/oraclize/ethereum-api/oraclizeAPI.sol";
 
-contract EthBank is usingOraclize {
+contract EthCD_OneHour is usingOraclize {
 
 	uint public constant MINIMUM_DEPOSIT = 0.01 ether;
 
   // Each banker account info is stored using the account struct
   struct Account {
   	uint balance;
-    uint payout_interval;
     uint payouts_left;
     uint payout_amount;
+		uint active;
   }
 
   mapping(address => Account) accountInfo;
@@ -23,26 +23,52 @@ contract EthBank is usingOraclize {
   // Total number of people HODLING (to be displayed on the website)
   uint public total_people_hodling;
 
+	function getBalance() public returns (uint) {
+		return accountInfo[msg.sender].balance;
+	}
+
+	function getNumPayoutsLeft() public returns (uint) {
+		return accountInfo[msg.sender].payouts_left;
+	}
+
+	function getPayoutAmount() public returns (uint) {
+		return accountInfo[msg.sender].payout_amount;
+	}
+
+	function amIActive() public returns (uint) {
+		return accountInfo[msg.sender].active;
+	}
+
   function EthBank() public {
     total_payout_remaining = 0;
     oraclize_query(60, "URL", "");
   }
 
-  function deposit(uint interval, uint num_payouts) public payable {
-    require(interval > 60);
-    require(num_payouts > 0);
+  function deposit() public payable {
     require(msg.value >= MINIMUM_DEPOSIT);
 
-    // Add the sender to the accounts list
-    // Also add the
-    accounts.push(msg.sender);
-    accountInfo[msg.sender].balance += msg.value;
-    accountInfo[msg.sender].payout_interval = interval;
-    accountInfo[msg.sender].payouts_left = num_payouts;
-    accountInfo[msg.sender].payout_amount = msg.value / num_payouts;
+		// We don't worry about whether they have an account.
+		// Depositing money just resets the payouts_left and payout_amount variables to default
 
-    total_payout_remaining += msg.value;
-    total_people_hodling += 1;
+		if (accountInfo[msg.sender].active != 1) {
+   		// Add the sender to the accounts list, set their balance,
+			// payout aount, and payouts left
+    	accounts.push(msg.sender);
+    	accountInfo[msg.sender].balance = msg.value;
+    	accountInfo[msg.sender].payouts_left = 30;
+    	accountInfo[msg.sender].payout_amount = msg.value / NUM_PAYOUTS;
+
+    	total_payout_remaining += msg.value;
+    	total_people_hodling += 1;
+		} else {
+			// Add to the sender's balance, reset payouts_left to 30,
+			// and recalculate payout_aount
+			accountInfo[msg.sender].balance += msg.value;
+			accountInfo[msg.sender].payouts_left = 30;
+			accountInfo[msg.sender].payout_amount = accountInfo[msg.sender].balance / NUM_PAYOUTS;
+
+			total_payout_remaining += msg.value;
+		}
   }
 
   function payout() private {
@@ -50,12 +76,16 @@ contract EthBank is usingOraclize {
     	uint transfer_amount = accountInfo[accounts[k]].payout_amount;
 
 			if (transfer_amount > accountInfo[accounts[k]].balance) {
-				transfer_amount = accountINfo[accounts[k]].balance;
+				transfer_amount = accountInfo[accounts[k]].balance;
+
+				// User is no longer hodling, as he is all paid out
+				accountInfo[accounts[k]].active = 0;
+				total_people_hodling -= 1;
 			}
 
       accounts[k].transfer(transfer_amount);
       accountInfo[accounts[k]].payouts_left -= 1;
-      accountInfo[accounts[k]].balance -= 1;
+      accountInfo[accounts[k]].balance -= transfer_amount;
 
       total_payout_remaining -= transfer_amount;
     }
