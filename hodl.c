@@ -60,6 +60,7 @@ contract EthCD_OneHour is usingOraclize {
     	accountInfo[msg.sender].balance = msg.value;
     	accountInfo[msg.sender].payouts_left = 30;
     	accountInfo[msg.sender].payout_amount = msg.value / NUM_PAYOUTS;
+			accountInfo[msg.sender].active = 1;
 
     	total_payout_remaining += msg.value;
     	total_people_hodling += 1;
