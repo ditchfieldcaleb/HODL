@@ -15,7 +15,6 @@ contract EthCD_OneHour {
   }
 
   mapping(address => Account) accountInfo;
-  address[] accounts;
 
   // Total to be paid out (to be displayed on the website)
   uint public total_payout_remaining;
@@ -52,7 +51,6 @@ contract EthCD_OneHour {
 		if (accountInfo[msg.sender].active != 1) {
    		// Add the sender to the accounts list, set their balance,
 			// payout aount, and payouts left
-    	accounts.push(msg.sender);
     	accountInfo[msg.sender].balance = msg.value;
     	accountInfo[msg.sender].payouts_left = 30;
     	accountInfo[msg.sender].payout_amount = msg.value / NUM_PAYOUTS;
@@ -90,12 +88,12 @@ contract EthCD_OneHour {
 
 		// Sanity check! If it's totally expired, just give the rest of the payouts
 		if (minutes_since_created >= NUM_PAYOUTS) {
-			payouts_to_give = accountInfo[msg.sender].payouts_left
+			payouts_to_give = accountInfo[msg.sender].payouts_left;
 		}
 
 		accountInfo[msg.sender].payouts_left -= payouts_to_give;
 		uint transfer_amount = payouts_to_give * accountInfo[msg.sender].payout_amount;
-		accounts[msg.sender].transfer(transfer_amount);
+		msg.sender.transfer(transfer_amount);
 		total_payout_remaining -= transfer_amount;
 
 		if (accountInfo[msg.sender].payouts_left = 0) {
