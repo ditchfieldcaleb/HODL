@@ -93,11 +93,12 @@ contract EthCD_OneHour {
 
 		accountInfo[msg.sender].payouts_left -= payouts_to_give;
 		uint transfer_amount = payouts_to_give * accountInfo[msg.sender].payout_amount;
-		msg.sender.transfer(transfer_amount);
 		total_payout_remaining -= transfer_amount;
 
-		if (accountInfo[msg.sender].payouts_left = 0) {
+		if (accountInfo[msg.sender].payouts_left == 0) {
 			accountInfo[msg.sender].active = 0;
 		}
+
+		msg.sender.transfer(transfer_amount);
   }
 }
