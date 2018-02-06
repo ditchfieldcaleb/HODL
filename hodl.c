@@ -1,11 +1,9 @@
 pragma solidity ^0.4.11;
 
-import "github.com/oraclize/ethereum-api/oraclizeAPI.sol";
+contract EthCD_OneHour {
 
-contract EthCD_OneHour is usingOraclize {
-
-	uint public constant MINIMUM_DEPOSIT = 0.01 ether;
-	uint public constant NUM_PAYOUTS = 30;
+	uint public constant MINIMUM_DEPOSIT = 0.01 ether;	// Min payout to avoid weirdness
+	uint public constant NUM_PAYOUTS = 60; 							// 60 minutes in an hour
 
   // Each banker account info is stored using the account struct
   struct Account {
@@ -13,6 +11,7 @@ contract EthCD_OneHour is usingOraclize {
     uint payouts_left;
     uint payout_amount;
 		uint active;
+		uint created;
   }
 
   mapping(address => Account) accountInfo;
@@ -42,9 +41,6 @@ contract EthCD_OneHour is usingOraclize {
 
   function EthBank() public {
     total_payout_remaining = 0;
-
-		// Start the callbacks 60 seconds later
-    oraclize_query(60, "URL", "");
   }
 
   function deposit() public payable {
@@ -61,45 +57,49 @@ contract EthCD_OneHour is usingOraclize {
     	accountInfo[msg.sender].payouts_left = 30;
     	accountInfo[msg.sender].payout_amount = msg.value / NUM_PAYOUTS;
 			accountInfo[msg.sender].active = 1;
+			accountInfo[msg.sender].created = now;
 
     	total_payout_remaining += msg.value;
     	total_people_hodling += 1;
 		} else {
 			// Add to the sender's balance, reset payouts_left to 30,
-			// and recalculate payout_aount
+			// and recalculate payout_aount (and reset the created date)
 			accountInfo[msg.sender].balance += msg.value;
 			accountInfo[msg.sender].payouts_left = 30;
 			accountInfo[msg.sender].payout_amount = accountInfo[msg.sender].balance / NUM_PAYOUTS;
+			accountInfo[msg.sender].created = now;
 
 			total_payout_remaining += msg.value;
 		}
   }
 
-  function payout() private {
-  	for(uint k = 0; k < accounts.length; k++) {
-    	uint transfer_amount = accountInfo[accounts[k]].payout_amount;
+  function payout() public {
+		require(accountInfo[msg.sender].active == 1);
 
-			if (transfer_amount > accountInfo[accounts[k]].balance) {
-				transfer_amount = accountInfo[accounts[k]].balance;
+		uint seconds_since_created = now - accountInfo[msg.sender].created;
+		uint minutes_since_created = seconds_since_created / 60;
 
-				// User is no longer hodling, as he is all paid out
-				accountInfo[accounts[k]].active = 0;
-				total_people_hodling -= 1;
-			}
+		// Calculate how much balance the payer should have remaining in his account at this point
+		// Payout the difference
+		//
+		// Example: should have 20 payouts left. Actually has 26 payouts left.
+		// thus we payout 6 payouts.
+		uint remaining_payouts = NUM_PAYOUTS - (minutes_since_created);
 
-      accounts[k].transfer(transfer_amount);
-      accountInfo[accounts[k]].payouts_left -= 1;
-      accountInfo[accounts[k]].balance -= transfer_amount;
+		uint payouts_to_give = accountInfo[msg.sender].payouts_left - remaining_payouts;
 
-      total_payout_remaining -= transfer_amount;
-    }
+		// Sanity check! If it's totally expired, just give the rest of the payouts
+		if (minutes_since_created >= NUM_PAYOUTS) {
+			payouts_to_give = accountInfo[msg.sender].payouts_left
+		}
+
+		accountInfo[msg.sender].payouts_left -= payouts_to_give;
+		uint transfer_amount = payouts_to_give * accountInfo[msg.sender].payout_amount;
+		accounts[msg.sender].transfer(transfer_amount);
+		total_payout_remaining -= transfer_amount;
+
+		if (accountInfo[msg.sender].payouts_left = 0) {
+			accountInfo[msg.sender].active = 0;
+		}
   }
-
-  function __callback(bytes32 myid, string result) {
-  	if (msg.sender != oraclize_cbAddress()) throw;
-
-    // Recursive oraclize querying - will query every 2 minutes
-    oraclize_query(120, "URL", "");
-    payout();
- 	}
 }
