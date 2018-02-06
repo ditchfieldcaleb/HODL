@@ -1,3 +1,4 @@
+pragma :w
 solidity ^0.4.11;
 
 import "github.com/oraclize/ethereum-api/oraclizeAPI.sol";
@@ -24,19 +25,19 @@ contract EthCD_OneHour is usingOraclize {
   // Total number of people HODLING (to be displayed on the website)
   uint public total_people_hodling;
 
-	function getBalance() public returns (uint) {
+	function getBalance() public view returns (uint) {
 		return accountInfo[msg.sender].balance;
 	}
 
-	function getNumPayoutsLeft() public returns (uint) {
+	function getNumPayoutsLeft() public view returns (uint) {
 		return accountInfo[msg.sender].payouts_left;
 	}
 
-	function getPayoutAmount() public returns (uint) {
+	function getPayoutAmount() public view returns (uint) {
 		return accountInfo[msg.sender].payout_amount;
 	}
 
-	function amIActive() public returns (uint) {
+	function amIActive() public view returns (uint) {
 		return accountInfo[msg.sender].active;
 	}
 
