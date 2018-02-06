@@ -52,7 +52,7 @@ contract EthCD_OneHour {
    		// Add the sender to the accounts list, set their balance,
 			// payout aount, and payouts left
     	accountInfo[msg.sender].balance = msg.value;
-    	accountInfo[msg.sender].payouts_left = 30;
+    	accountInfo[msg.sender].payouts_left = 60;
     	accountInfo[msg.sender].payout_amount = msg.value / NUM_PAYOUTS;
 			accountInfo[msg.sender].active = 1;
 			accountInfo[msg.sender].created = now;
@@ -63,7 +63,7 @@ contract EthCD_OneHour {
 			// Add to the sender's balance, reset payouts_left to 30,
 			// and recalculate payout_aount (and reset the created date)
 			accountInfo[msg.sender].balance += msg.value;
-			accountInfo[msg.sender].payouts_left = 30;
+			accountInfo[msg.sender].payouts_left = 60;
 			accountInfo[msg.sender].payout_amount = accountInfo[msg.sender].balance / NUM_PAYOUTS;
 			accountInfo[msg.sender].created = now;
 
