@@ -61,7 +61,7 @@ contract EthCD_OneHour {
     	total_payout_remaining += msg.value;
     	total_people_hodling += 1;
 		} else {
-			// Add to the sender's balance, reset payouts_left to 30,
+			// Add to the sender's balance, reset payouts_left to 60,
 			// and recalculate payout_aount (and reset the created date)
 			accountInfo[msg.sender].balance += msg.value;
 			accountInfo[msg.sender].payouts_left = 60;
@@ -77,11 +77,14 @@ contract EthCD_OneHour {
 		require(accountInfo[msg.sender].active == 1);
 
 		uint remaining_balance = accountInfo[msg.sender].balance;
-		uint whale_profit = remaining_Balance / 10;
+		uint whale_profit = remaining_balance / 10;
 		uint amount_to_panic_seller = remaining_balance - whale_profit;
 
 		accountInfo[msg.sender].balance = 0;
 		accountInfo[msg.sender].active = 0;
+
+		total_payout_remaining -= remaining_balance;
+		total_people_hodling -= 1;
 
 		WHALE.transfer(whale_profit);
 		msg.sender.transfer(amount_to_panic_seller);
@@ -110,15 +113,17 @@ contract EthCD_OneHour {
 
 		accountInfo[msg.sender].payouts_left -= payouts_to_give;
 		uint transfer_amount = payouts_to_give * accountInfo[msg.sender].payout_amount;
+
+		// Sanity check
+		assert(accountInfo[msg.sender].balance >= transfer_amount);
+
 		accountInfo[msg.sender].balance -= transfer_amount;
 		total_payout_remaining -= transfer_amount;
 
 		if (accountInfo[msg.sender].payouts_left == 0) {
 			accountInfo[msg.sender].active = 0;
+			total_people_hodling = 0;
 		}
-
-		// Sanity check
-		assert(accountInfo[msg.sender].balance >= transfer_amount);
 
 		msg.sender.transfer(transfer_amount);
   }
