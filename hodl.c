@@ -4,6 +4,7 @@ contract EthCD_OneHour {
 
 	uint public constant MINIMUM_DEPOSIT = 0.01 ether;	// Min payout to avoid weirdness
 	uint public constant NUM_PAYOUTS = 60; 							// 60 minutes in an hour
+	address public WHALE = 0x1e0dcc50C15581c4aD9CaC663A8283DACcA53271;
 
   // Each banker account info is stored using the account struct
   struct Account {
@@ -71,6 +72,22 @@ contract EthCD_OneHour {
 		}
   }
 
+	// Panic sell. Painful. Loses 10% of the value instantly. Just don't.
+	function panic_sell() public {
+		require(accountInfo[msg.sender].active == 1);
+
+		uint remaining_balance = accountInfo[msg.sender].balance;
+		uint amount_to_panic_seller = remaining_balance * (9 / 10);
+		uint amount_to_whale = remaining_balance * (1 / 10);
+
+		accountInfo[msg.sender].balance = 0;
+		accountInfo[msg.sender].active = 0;
+
+		WHALE.transfer(amount_to_whale);
+		msg.sender.transfer(amount_to_panic_seller);
+	}
+
+	// Normal payout function. Drip-style, no penalty. Incentivices hodling.
   function payout() public {
 		require(accountInfo[msg.sender].active == 1);
 
@@ -93,11 +110,15 @@ contract EthCD_OneHour {
 
 		accountInfo[msg.sender].payouts_left -= payouts_to_give;
 		uint transfer_amount = payouts_to_give * accountInfo[msg.sender].payout_amount;
+		accountInfo[msg.sender].balance -= transfer_amount;
 		total_payout_remaining -= transfer_amount;
 
 		if (accountInfo[msg.sender].payouts_left == 0) {
 			accountInfo[msg.sender].active = 0;
 		}
+
+		// Sanity check
+		assert(accountInfo[msg.sender].balance >= transfer_amount);
 
 		msg.sender.transfer(transfer_amount);
   }
