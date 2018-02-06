@@ -38,7 +38,7 @@ contract EthCD_OneHour {
 		return accountInfo[msg.sender].active;
 	}
 
-  function EthBank() public {
+  function EthCD_OneHour() public {
     total_payout_remaining = 0;
   }
 
