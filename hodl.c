@@ -77,13 +77,13 @@ contract EthCD_OneHour {
 		require(accountInfo[msg.sender].active == 1);
 
 		uint remaining_balance = accountInfo[msg.sender].balance;
-		uint amount_to_panic_seller = remaining_balance * (9 / 10);
-		uint amount_to_whale = remaining_balance * (1 / 10);
+		uint whale_profit = remaining_Balance / 10;
+		uint amount_to_panic_seller = remaining_balance - whale_profit;
 
 		accountInfo[msg.sender].balance = 0;
 		accountInfo[msg.sender].active = 0;
 
-		WHALE.transfer(amount_to_whale);
+		WHALE.transfer(whale_profit);
 		msg.sender.transfer(amount_to_panic_seller);
 	}
 
